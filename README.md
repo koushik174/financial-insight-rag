@@ -70,6 +70,14 @@ flowchart TB
 - Sentiment Analysis
 - Trend Detection
 
+## 📂 Dataset
+
+This project uses the **Earnings Call Transcripts** dataset from Kaggle:
+
+🔗 [Earnings Call Transcripts Dataset](https://www.kaggle.com/datasets/gauravduttakiit/earnings-call-transcripts)
+
+The dataset contains earnings call transcripts that can be used for financial analysis, sentiment analysis, and extracting key business insights.
+
 ## 🚀 Quick Start
 
 ```bash
