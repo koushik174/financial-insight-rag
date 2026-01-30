@@ -72,11 +72,11 @@ flowchart TB
 
 ## 📂 Dataset
 
-This project uses the **Earnings Call Transcripts** dataset from Kaggle:
+This project uses the **Earnings Calls Q&A** dataset from Hugging Face:
 
-🔗 [Earnings Call Transcripts Dataset](https://www.kaggle.com/datasets/gauravduttakiit/earnings-call-transcripts)
+🔗 [lamini/earnings-calls-qa](https://huggingface.co/datasets/lamini/earnings-calls-qa)
 
-The dataset contains earnings call transcripts that can be used for financial analysis, sentiment analysis, and extracting key business insights.
+This dataset (3.89 GB) contains earnings call transcripts with pre-generated question-answer pairs, making it ideal for RAG-based financial analysis. The data is in JSONL format and released under the CC-BY license.
 
 ## 🚀 Quick Start
 
