@@ -70,6 +70,14 @@ flowchart TB
 - Sentiment Analysis
 - Trend Detection
 
+## 📂 Dataset
+
+This project uses the **Earnings Calls Q&A** dataset from Hugging Face:
+
+🔗 [lamini/earnings-calls-qa](https://huggingface.co/datasets/lamini/earnings-calls-qa)
+
+This dataset (3.89 GB) contains earnings call transcripts with pre-generated question-answer pairs, making it ideal for RAG-based financial analysis. The data is in JSONL format and released under the CC-BY license.
+
 ## 🚀 Quick Start
 
 ```bash
