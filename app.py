@@ -100,7 +100,7 @@ if query.strip():
     for i, r in enumerate(results, 1):
         score_pct = round(r["score"] * 100, 1)
         badge = "🟢" if r["score"] > 0.65 else "🟡" if r["score"] > 0.35 else "🔴"
-        with st.expander(f"{badge} #{i} — Relevance: {score_pct}% &nbsp;|&nbsp; {r['question'][:90]}..."):
+        with st.expander(f"{badge} #{i} — Relevance: {score_pct}%  |  {r['question'][:90]}..."):
             st.markdown(f"**Question:**")
             st.info(r["question"])
             st.markdown(f"**Answer:**")
