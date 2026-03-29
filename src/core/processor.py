@@ -2,7 +2,7 @@ from typing import List, Dict, Optional
 import re
 import logging
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ class DocumentProcessor:
             content=cleaned_text,
             chunks=chunks,
             metadata=metadata or {},
-            processed_at=datetime.utcnow()
+            processed_at=datetime.now(timezone.utc)
         )
     
     def _clean_text(self, text: str) -> str:
@@ -106,8 +106,8 @@ class DocumentProcessor:
     def _generate_doc_id(self, metadata: Optional[Dict]) -> str:
         """Generate unique document ID based on metadata."""
         if metadata and 'company' in metadata and 'date' in metadata:
-            return f"{metadata['company']}_{metadata['date']}_{datetime.utcnow().timestamp()}"
-        return f"doc_{datetime.utcnow().timestamp()}"
+            return f"{metadata['company']}_{metadata['date']}_{datetime.now(timezone.utc).timestamp()}"
+        return f"doc_{datetime.now(timezone.utc).timestamp()}"
     
     def batch_process(self, 
                      documents: List[Dict]) -> List[ProcessedDocument]:
