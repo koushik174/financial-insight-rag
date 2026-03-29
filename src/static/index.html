@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Financial Insight RAG</title>
+  <style>
+    /* ── Reset & base ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ────────────────────────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%);
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,.4);
+    }
+    header .logo {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #38bdf8;
+      letter-spacing: -0.5px;
+    }
+    header .subtitle {
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+    header .badge {
+      margin-left: auto;
+      background: #0ea5e9;
+      color: #fff;
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    /* ── Layout ────────────────────────────────────────────────── */
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 0;
+      overflow: hidden;
+      height: calc(100vh - 66px);
+    }
+    aside {
+      background: #1e293b;
+      border-right: 1px solid #334155;
+      overflow-y: auto;
+      padding: 1.5rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ── Section titles ────────────────────────────────────────── */
+    .section-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #64748b;
+      margin-bottom: .5rem;
+    }
+
+    /* ── Cards ─────────────────────────────────────────────────── */
+    .card {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 1rem;
+    }
+
+    /* ── Form controls ──────────────────────────────────────────── */
+    label { font-size: 0.82rem; color: #94a3b8; display: block; margin-bottom: .3rem; }
+    input[type="text"], textarea, select {
+      width: 100%;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      color: #e2e8f0;
+      padding: .55rem .75rem;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color .2s;
+    }
+    input[type="text"]:focus, textarea:focus, select:focus {
+      border-color: #38bdf8;
+    }
+    textarea { resize: vertical; min-height: 90px; }
+
+    /* ── Buttons ────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      padding: .6rem 1.1rem;
+      border-radius: 7px;
+      font-size: 0.86rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: filter .2s, transform .1s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-primary   { background: #0ea5e9; color: #fff; }
+    .btn-secondary { background: #334155; color: #e2e8f0; }
+    .btn-danger    { background: #ef4444; color: #fff; }
+    .btn:hover:not(:disabled) { filter: brightness(1.1); }
+
+    /* ── Doc list ───────────────────────────────────────────────── */
+    #doc-list { display: flex; flex-direction: column; gap: .5rem; }
+    .doc-item {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 7px;
+      padding: .6rem .8rem;
+      font-size: 0.82rem;
+      display: flex;
+      align-items: flex-start;
+      gap: .5rem;
+    }
+    .doc-item .doc-type {
+      background: #0369a1;
+      color: #e0f2fe;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 0.72rem;
+      flex-shrink: 0;
+    }
+    .doc-item .doc-preview { color: #94a3b8; flex: 1; word-break: break-word; }
+    .doc-item .remove-btn  { cursor: pointer; color: #64748b; flex-shrink: 0; font-size: 1rem; }
+    .doc-item .remove-btn:hover { color: #ef4444; }
+
+    /* ── Chat area ──────────────────────────────────────────────── */
+    .chat-section {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .tab-bar {
+      display: flex;
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      padding: 0 1.5rem;
+    }
+    .tab {
+      padding: .75rem 1rem;
+      font-size: 0.86rem;
+      color: #64748b;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color .2s, border-color .2s;
+      white-space: nowrap;
+    }
+    .tab.active { color: #38bdf8; border-bottom-color: #38bdf8; }
+
+    /* panels */
+    .panels { flex: 1; overflow: hidden; position: relative; }
+    .panel  {
+      position: absolute; inset: 0;
+      display: none; flex-direction: column; padding: 1.5rem;
+      overflow-y: auto; gap: 1rem;
+    }
+    .panel.active { display: flex; }
+
+    /* ── Message bubbles ────────────────────────────────────────── */
+    #chat-messages { flex: 1; display: flex; flex-direction: column; gap: .75rem; overflow-y: auto; }
+    .msg {
+      max-width: 80%;
+      padding: .75rem 1rem;
+      border-radius: 12px;
+      font-size: 0.88rem;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg.user { align-self: flex-end; background: #0369a1; color: #e0f2fe; }
+    .msg.bot  { align-self: flex-start; background: #1e293b; border: 1px solid #334155; color: #e2e8f0; }
+    .msg.error{ align-self: flex-start; background: #450a0a; border: 1px solid #7f1d1d; color: #fca5a5; }
+    .msg.info { align-self: center; color: #64748b; font-style: italic; font-size: .82rem; }
+
+    /* ── Chat input bar ─────────────────────────────────────────── */
+    .chat-input-bar {
+      border-top: 1px solid #334155;
+      padding: 1rem 1.5rem;
+      display: flex;
+      gap: .75rem;
+      background: #0f172a;
+    }
+    .chat-input-bar textarea {
+      flex: 1;
+      min-height: 48px;
+      max-height: 140px;
+      resize: none;
+    }
+
+    /* ── Spinner ────────────────────────────────────────────────── */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: none;
+    }
+    .spinner.active { display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Result card ────────────────────────────────────────────── */
+    .result-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 1.25rem;
+      font-size: .87rem;
+      line-height: 1.6;
+    }
+    .result-card h3 { font-size: .95rem; color: #38bdf8; margin-bottom: .5rem; }
+    .result-card pre {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: .75rem;
+      font-size: .8rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+    .kv { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .kv-item { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: .3rem .6rem; font-size: .8rem; }
+    .kv-item span { color: #38bdf8; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">📊 Financial Insight RAG</div>
+    <div class="subtitle">AI-powered financial document analysis</div>
+  </div>
+  <div class="badge">v1.0.0</div>
+</header>
+
+<main>
+  <!-- ── Sidebar ─────────────────────────────────────────────────── -->
+  <aside>
+    <!-- Add document -->
+    <div>
+      <div class="section-title">Add Context Document</div>
+      <div class="card" style="display:flex;flex-direction:column;gap:.75rem;">
+        <div>
+          <label for="doc-type">Document Type</label>
+          <select id="doc-type">
+            <option value="earnings_call">Earnings Call Transcript</option>
+            <option value="sec_filing">SEC Filing</option>
+            <option value="financial_report">Financial Report</option>
+            <option value="news">News Article</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div>
+          <label for="doc-content">Content</label>
+          <textarea id="doc-content" placeholder="Paste document text here…"></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="addDocument()">＋ Add Document</button>
+      </div>
+    </div>
+
+    <!-- Document list -->
+    <div>
+      <div class="section-title">Context Documents (<span id="doc-count">0</span>)</div>
+      <div id="doc-list">
+        <div class="msg info">No documents added yet.</div>
+      </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div>
+      <div class="section-title">Quick Start</div>
+      <div style="display:flex;flex-direction:column;gap:.5rem;">
+        <button class="btn btn-secondary" onclick="loadSampleDocument()">📄 Load Sample Doc</button>
+        <button class="btn btn-danger" onclick="clearDocuments()">🗑 Clear All Documents</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Right panel ─────────────────────────────────────────────── -->
+  <section class="chat-section">
+    <div class="tab-bar">
+      <div class="tab active" onclick="switchTab('chat',this)">💬 Chat / Insights</div>
+      <div class="tab" onclick="switchTab('analyze',this)">📈 Earnings Analysis</div>
+      <div class="tab" onclick="switchTab('compare',this)">🔄 Compare Quarters</div>
+    </div>
+
+    <div class="panels">
+
+      <!-- ── Chat panel ──────────────────────────────────────── -->
+      <div class="panel active" id="panel-chat">
+        <div id="chat-messages">
+          <div class="msg info">Add documents in the sidebar, then ask any question about them.</div>
+        </div>
+      </div>
+
+      <!-- ── Analyze panel ───────────────────────────────────── -->
+      <div class="panel" id="panel-analyze">
+        <div class="section-title">Earnings Analysis</div>
+        <div class="card" style="display:flex;flex-direction:column;gap:.75rem;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+            <div>
+              <label for="analyze-company">Company Ticker</label>
+              <input type="text" id="analyze-company" placeholder="e.g. AAPL" />
+            </div>
+            <div>
+              <label for="analyze-quarter">Quarter</label>
+              <input type="text" id="analyze-quarter" placeholder="e.g. Q3_2023" />
+            </div>
+          </div>
+          <button class="btn btn-primary" id="analyze-btn" onclick="runAnalysis()">
+            <span class="spinner" id="analyze-spinner"></span> Run Analysis
+          </button>
+        </div>
+        <div id="analyze-result"></div>
+      </div>
+
+      <!-- ── Compare panel ───────────────────────────────────── -->
+      <div class="panel" id="panel-compare">
+        <div class="section-title">Quarter Comparison</div>
+        <div class="card" style="display:flex;flex-direction:column;gap:.75rem;">
+          <div>
+            <label for="compare-company">Company Ticker</label>
+            <input type="text" id="compare-company" placeholder="e.g. AAPL" />
+          </div>
+          <div>
+            <label for="compare-quarters">Quarters (comma-separated)</label>
+            <input type="text" id="compare-quarters" placeholder="e.g. Q1_2023,Q2_2023,Q3_2023" />
+          </div>
+          <button class="btn btn-primary" id="compare-btn" onclick="runComparison()">
+            <span class="spinner" id="compare-spinner"></span> Compare
+          </button>
+        </div>
+        <div id="compare-result"></div>
+      </div>
+
+    </div>
+
+    <!-- Chat input bar (only shown on chat panel) -->
+    <div class="chat-input-bar" id="chat-input-bar">
+      <textarea id="chat-input" placeholder="Ask a question about your documents…" rows="2"
+        onkeydown="handleChatKey(event)"></textarea>
+      <button class="btn btn-primary" id="send-btn" onclick="sendQuery()">
+        <span class="spinner" id="chat-spinner"></span> Send
+      </button>
+    </div>
+  </section>
+</main>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────
+const documents = [];
+
+// ── Tabs ─────────────────────────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+  document.getElementById('chat-input-bar').style.display = name === 'chat' ? 'flex' : 'none';
+}
+
+// ── Documents ────────────────────────────────────────────────────────
+function addDocument() {
+  const type    = document.getElementById('doc-type').value;
+  const content = document.getElementById('doc-content').value.trim();
+  if (!content) { alert('Please enter document content.'); return; }
+
+  documents.push({ content, metadata: {}, type });
+  document.getElementById('doc-content').value = '';
+  renderDocList();
+}
+
+function removeDocument(i) {
+  documents.splice(i, 1);
+  renderDocList();
+}
+
+function clearDocuments() {
+  if (documents.length === 0) return;
+  if (!confirm('Remove all documents?')) return;
+  documents.length = 0;
+  renderDocList();
+}
+
+function renderDocList() {
+  const list = document.getElementById('doc-list');
+  document.getElementById('doc-count').textContent = documents.length;
+  if (documents.length === 0) {
+    list.innerHTML = '<div class="msg info">No documents added yet.</div>';
+    return;
+  }
+  list.innerHTML = documents.map((d, i) => `
+    <div class="doc-item">
+      <span class="doc-type">${d.type}</span>
+      <span class="doc-preview">${escHtml(d.content.slice(0, 120))}${d.content.length > 120 ? '…' : ''}</span>
+      <span class="remove-btn" onclick="removeDocument(${i})" title="Remove">✕</span>
+    </div>
+  `).join('');
+}
+
+function loadSampleDocument() {
+  document.getElementById('doc-type').value = 'earnings_call';
+  document.getElementById('doc-content').value =
+    'Apple Inc. Q3 2023 Earnings Call Transcript\n\n' +
+    'Revenue for the quarter was $81.8 billion, a decrease of 1% year-over-year. ' +
+    'iPhone revenue was $39.7 billion. Services revenue reached a record $21.2 billion, ' +
+    'growing 8% year-over-year. Gross margin was 44.5%. ' +
+    'Earnings per share (EPS) was $1.26, compared to $1.20 in the prior-year quarter. ' +
+    'The company returned over $24 billion to shareholders during the quarter. ' +
+    'CEO Tim Cook highlighted strong performance in emerging markets and the continued ' +
+    'growth of the installed base, which reached an all-time high.';
+  addDocument();
+}
+
+// ── Chat ─────────────────────────────────────────────────────────────
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendQuery(); }
+}
+
+async function sendQuery() {
+  const input = document.getElementById('chat-input');
+  const query = input.value.trim();
+  if (!query) return;
+  if (documents.length === 0) {
+    appendMessage('error', '⚠️ Please add at least one document before querying.');
+    return;
+  }
+
+  appendMessage('user', query);
+  input.value = '';
+  setLoading('chat', true);
+
+  try {
+    const res = await fetch('/api/v1/insights', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, documents }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      appendMessage('error', '❌ Error: ' + (data.detail || data.error || 'Unknown error'));
+    } else {
+      appendMessage('bot', data.insights || '(No response generated)');
+    }
+  } catch (err) {
+    appendMessage('error', '❌ Network error: ' + err.message);
+  } finally {
+    setLoading('chat', false);
+  }
+}
+
+function appendMessage(role, text) {
+  const box = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.textContent = text;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ── Analysis ─────────────────────────────────────────────────────────
+async function runAnalysis() {
+  const company = document.getElementById('analyze-company').value.trim().toUpperCase();
+  const quarter = document.getElementById('analyze-quarter').value.trim();
+  if (!company || !quarter) { alert('Please fill in Company Ticker and Quarter.'); return; }
+
+  setLoading('analyze', true);
+  document.getElementById('analyze-result').innerHTML = '';
+
+  try {
+    const res = await fetch('/api/v1/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company, quarter }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      document.getElementById('analyze-result').innerHTML =
+        `<div class="result-card" style="border-color:#7f1d1d;color:#fca5a5;">❌ ${escHtml(data.detail || data.error || 'Error')}</div>`;
+    } else {
+      document.getElementById('analyze-result').innerHTML = renderResult('Analysis Result', data);
+    }
+  } catch (err) {
+    document.getElementById('analyze-result').innerHTML =
+      `<div class="result-card" style="border-color:#7f1d1d;color:#fca5a5;">❌ Network error: ${escHtml(err.message)}</div>`;
+  } finally {
+    setLoading('analyze', false);
+  }
+}
+
+// ── Comparison ───────────────────────────────────────────────────────
+async function runComparison() {
+  const company  = document.getElementById('compare-company').value.trim().toUpperCase();
+  const quartersRaw = document.getElementById('compare-quarters').value.trim();
+  if (!company || !quartersRaw) { alert('Please fill in Company Ticker and Quarters.'); return; }
+  const quarters = quartersRaw.split(',').map(s => s.trim()).filter(Boolean);
+
+  setLoading('compare', true);
+  document.getElementById('compare-result').innerHTML = '';
+
+  try {
+    const res = await fetch('/api/v1/compare', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company, quarters }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      document.getElementById('compare-result').innerHTML =
+        `<div class="result-card" style="border-color:#7f1d1d;color:#fca5a5;">❌ ${escHtml(data.detail || data.error || 'Error')}</div>`;
+    } else {
+      document.getElementById('compare-result').innerHTML = renderResult('Comparison Result', data);
+    }
+  } catch (err) {
+    document.getElementById('compare-result').innerHTML =
+      `<div class="result-card" style="border-color:#7f1d1d;color:#fca5a5;">❌ Network error: ${escHtml(err.message)}</div>`;
+  } finally {
+    setLoading('compare', false);
+  }
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────
+function setLoading(section, on) {
+  const spinner = document.getElementById(section + '-spinner');
+  const btn     = document.getElementById(section + '-btn');
+  if (spinner) spinner.classList.toggle('active', on);
+  if (btn)     btn.disabled = on;
+}
+
+function renderResult(title, data) {
+  return `<div class="result-card">
+    <h3>${escHtml(title)}</h3>
+    <pre>${escHtml(JSON.stringify(data, null, 2))}</pre>
+  </div>`;
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>

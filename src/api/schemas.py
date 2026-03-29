@@ -1,6 +1,6 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Dict, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 class AnalysisType(str, Enum):
@@ -19,13 +19,15 @@ class AnalysisRequest(BaseModel):
         description="Type of analysis to perform"
     )
     
-    @validator('company')
+    @field_validator('company')
+    @classmethod
     def validate_company(cls, v):
         if not v.isalpha():
             raise ValueError("Company ticker must contain only letters")
         return v.upper()
-    
-    @validator('quarter')
+
+    @field_validator('quarter')
+    @classmethod
     def validate_quarter(cls, v):
         if not v.startswith('Q'):
             raise ValueError("Quarter must start with Q (e.g., Q3_2023)")
@@ -38,8 +40,8 @@ class AnalysisResponse(BaseModel):
     analysis: Dict = Field(..., description="Analysis results")
     timestamp: str
     
-    class Config:
-        schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "company": "AAPL",
                 "quarter": "Q3_2023",
@@ -56,6 +58,7 @@ class AnalysisResponse(BaseModel):
                 "timestamp": "2024-03-23T10:30:00Z"
             }
         }
+    }
 
 class ComparisonRequest(BaseModel):
     """Request model for quarter comparison."""
@@ -113,16 +116,17 @@ class ErrorResponse(BaseModel):
     """Response model for errors."""
     error: str
     status_code: int
-    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
-    class Config:
-        schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "error": "Invalid company ticker symbol",
                 "status_code": 400,
                 "timestamp": "2024-03-23T10:30:00Z"
             }
         }
+    }
 
 class HealthCheck(BaseModel):
     """Model for health check response."""

@@ -2,7 +2,7 @@ import torch
 from typing import List, Dict, Optional, Union
 from transformers import AutoTokenizer, AutoModel
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 from dataclasses import dataclass
 from sentence_transformers import SentenceTransformer
@@ -80,7 +80,7 @@ class FinancialEmbeddingModel:
                     "input_count": len(texts),
                     "embedding_dim": final_embeddings.shape[1]
                 },
-                created_at=datetime.utcnow()
+                created_at=datetime.now(timezone.utc)
             )
             
         except Exception as e:
